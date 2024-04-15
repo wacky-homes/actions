@@ -1,0 +1,28 @@
+name: Docker CI
+description: Build a Docker image for CI purposes
+author: gergoszaszvaradi
+inputs:
+  image:
+    description: The container image to build
+    required: true
+    type: string
+  dockerfile:
+    description: The path to the Dockerfile
+    required: true
+    type: string
+  context:
+    description: The build context
+    required: true
+    type: string
+runs:
+  using: composite
+  steps:
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ inputs.image }}:ci --label "build=ci" -f ${{ inputs.dockerfile }} ${{ inputs.context }}
+      shell: bash
+    - name: Clean up Docker images
+      run: |
+        docker image rm $(docker images -q -f "label=build=ci")
+      shell: bash
+      continue-on-error: true
