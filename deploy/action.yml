@@ -89,12 +89,12 @@ runs:
                 name,
                 image,
                 pullPolicy: "never",
-                environment: environment == "" ? undefined : Object.fromEntries(environment.split("\n").map(e => e.split(/[:=]/).map(p => p.trim()))),
+                environment: environment == "" ? undefined : Object.fromEntries(environment.split("\n").map(e => e.split(/[=]/).map(p => p.trim()))),
                 dependencies: dependencies == "" ? undefined : dependencies.split(/[\n,]/),
                 labels: {
                   "service.name": name,
                   "service.image": image,
-                  ...Object.fromEntries(labels.split("\n").map(e => e.split(/[:=]/).map(p => p.trim())))
+                  ...Object.fromEntries(labels.split("\n").map(e => e.split(/[=]/).map(p => p.trim())))
                 },
                 replicas: replicas == "" ? undefined : parseInt(replicas),
                 volumes: persistentStoragePath == "" ? undefined : [
