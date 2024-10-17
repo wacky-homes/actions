@@ -19,7 +19,7 @@ runs:
   steps:
     - name: Build Docker image
       run: |
-        docker build -t ${{ inputs.image }}:ci --label "build=ci" -f ${{ inputs.dockerfile }} ${{ inputs.context }}
+        docker build --network host -t ${{ inputs.image }}:ci --label "build=ci" -f ${{ inputs.dockerfile }} ${{ inputs.context }}
       shell: bash
     - name: Clean up Docker images
       run: |
