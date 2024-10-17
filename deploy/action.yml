@@ -25,7 +25,7 @@ runs:
     - name: Replace image tag
       uses: mikefarah/yq@master
       with:
-        cmd: yq eval '.services.${{ inputs.name }}.image = ${{ inputs.name }}:${{ inputs.version }}' -i compose.yaml
+        cmd: yq eval '.services.${{ inputs.name }}.image = "${{ inputs.name }}:${{ inputs.version }}"' -i compose.yaml
     - name: Commit changes
       shell: bash
       run: |
