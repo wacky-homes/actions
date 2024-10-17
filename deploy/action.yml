@@ -3,123 +3,34 @@ description: Deploy a container image to wacky
 author: gergoszaszvaradi
 inputs:
   name:
-    description: The name of the service
+    description: The name of the container
     required: true
     type: string
   image:
     description: The container image to deploy
     required: true
     type: string
-  environment:
-    description: |-
-      The environment variables. For example:
-      ```
-      environment: |-
-        FOO:123
-        BAR:456
-      ```
-    required: false
-    type: string
-  dependencies:
-    description: |-
-      A comma or new line separated list of services that this service depends on. For example:
-      ```
-      dependencies: rabbitmq,redis,mongodb
-      ```
-    required: false
-    type: string
-  labels:
-    description: |-
-      The labels to apply to the service. For example:
-      ```
-      labels: |-
-        some.label: value
-        another.label: value2
-      ```
-
-      Labels always set by default:
-      ```
-      service.name
-      service.image
-      ```
-    required: false
-    type: string
-  replicas:
-    description: The number of replicas to deploy
-    required: false
-    type: number
-  command:
-    description: The command to run in the container
-    required: false
-    type: string
-  persistent_storage_path:
-    description: The path inside of the container for the mounted volume. This will also create a volume with the name of the service.
-    required: false
-    type: string
-  wacky_token:
-    description: The token to authenticate with the wacky API
+  token:
+    description: The github token
     required: true
     type: string
 runs:
   using: composite
   steps:
-    - name: Deploy service
-      uses: actions/github-script@v7
+    - uses: actions/checkout@v3
       with:
-        script: |
-          try {
-            const name = core.getInput('name', { required: true });
-            const image = core.getInput('image', { required: true });
-            const environment = core.getInput('environment', { required: false });
-            const dependencies = core.getInput('dependencies', { required: false });
-            const labels = core.getInput('labels', { required: false });
-            const replicas = core.getInput('replicas', { required: false });
-            const command = core.getInput('command', { required: false });
-            const persistentStoragePath = core.getInput('persistent_storage_path', { required: false });
-            const wackyToken = core.getInput('wacky_token', { required: true });
-
-            const res = await fetch("http://localhost:3000/deploy", {
-              method: "POST",
-              headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${wackyToken}`
-              },
-              body: JSON.stringify({
-                name,
-                image,
-                pullPolicy: "never",
-                environment: environment == "" ? undefined : Object.fromEntries(environment.split("\n").map(e => e.split(/[=]/).map(p => p.trim()))),
-                dependencies: dependencies == "" ? undefined : dependencies.split(/[\n,]/),
-                labels: {
-                  "service.name": name,
-                  "service.image": image,
-                  ...Object.fromEntries(labels.split("\n").map(e => e.split(/[=]/).map(p => p.trim())))
-                },
-                replicas: replicas == "" ? undefined : parseInt(replicas),
-                volumes: persistentStoragePath == "" ? undefined : [
-                  {
-                    source: name,
-                    target: persistentStoragePath
-                  }
-                ],
-                command: command == "" ? undefined : command
-              }),
-            });
-
-            if (!res.ok) {
-              throw new Error(`Failed to deploy: ${res.status} ${res.statusText}\n${await res.text()}`);
-            }
-          } catch (error) {
-            core.setFailed(error.message);
-          }
-      env:
-        INPUT_NAME: ${{ inputs.name }}
-        INPUT_IMAGE: ${{ inputs.image }}
-        INPUT_ENVIRONMENT: ${{ inputs.environment }}
-        INPUT_DEPENDENCIES: ${{ inputs.dependencies }}
-        INPUT_LABELS: ${{ inputs.labels }}
-        INPUT_REPLICAS: ${{ inputs.replicas }}
-        INPUT_COMMAND: ${{ inputs.command }}
-        INPUT_PERSISTENT_STORAGE_PATH: ${{ inputs.persistent_storage_path }}
-        INPUT_WACKY_TOKEN: ${{ inputs.wacky_token }}
+        repository: wacky-homes/apps
+        ref: main
+        token: ${{ inputs.token }}
+    - name: Replace image tag
+      uses: mikefarah/yq@master
+      with:
+        cmd: yq eval '.services.${{ inputs.name }}.image = ${{ inputs.image }}' -i compose.yaml
+    - name: Commit changes
+      shell: bash
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email ""
+        git add .
+        git commit -m "[release] ${{ inputs.name }} ${{ inputs.image }}"
+        git push
