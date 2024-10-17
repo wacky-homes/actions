@@ -6,8 +6,8 @@ inputs:
     description: The name of the container
     required: true
     type: string
-  image:
-    description: The container image to deploy
+  version:
+    description: The version of the image
     required: true
     type: string
   token:
@@ -25,12 +25,12 @@ runs:
     - name: Replace image tag
       uses: mikefarah/yq@master
       with:
-        cmd: yq eval '.services.${{ inputs.name }}.image = ${{ inputs.image }}' -i compose.yaml
+        cmd: yq eval '.services.${{ inputs.name }}.image = ${{ inputs.name }}:${{ inputs.version }}' -i compose.yaml
     - name: Commit changes
       shell: bash
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email ""
         git add .
-        git commit -m "[release] ${{ inputs.name }} ${{ inputs.image }}"
+        git commit -m "Update '${{ inputs.name }}' to '${{ inputs.version }}'"
         git push
