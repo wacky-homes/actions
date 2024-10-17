@@ -23,5 +23,5 @@ runs:
   steps:
     - name: Build Docker image
       run: |
-        docker build -t ${{ inputs.image }}:${{ inputs.version }} -f ${{ inputs.dockerfile }} ${{ inputs.context }}
+        docker build --network host -t ${{ inputs.image }}:${{ inputs.version }} -f ${{ inputs.dockerfile }} ${{ inputs.context }}
       shell: bash
