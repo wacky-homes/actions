@@ -28,9 +28,9 @@ runs:
         ref: main
         token: ${{ inputs.token }}
     - name: Replace image tag
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq eval '.services.${{ inputs.name }}.image = "${{ inputs.name }}:${{ inputs.version }}"' -i ${{ inputs.namespace }}/${{ inputs.name }}.yaml
+      shell: bash
+      run: |
+        yq eval '.services.${{ inputs.name }}.image = "${{ inputs.name }}:${{ inputs.version }}"' -i ${{ inputs.namespace }}/${{ inputs.name }}.yaml
     - name: Commit changes
       shell: bash
       run: |
